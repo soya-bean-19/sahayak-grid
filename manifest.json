@@ -1,0 +1,10 @@
+{
+  "name": "SAHAYAK GRID",
+  "short_name": "SAHAYAK",
+  "description": "Offline-first emergency coordination prototype",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#09090f",
+  "theme_color": "#09090f",
+  "icons": []
+}

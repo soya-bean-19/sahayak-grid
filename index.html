@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#09090f"><meta name="description" content="SAHAYAK GRID offline-first emergency coordination prototype">
+  <link rel="manifest" href="manifest.json"><link rel="stylesheet" href="styles.css">
+  <title>SAHAYAK GRID — Field Coordination</title>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <a class="brand" href="#"><span class="brand-mark">S<span>G</span></span><span><b>SAHAYAK</b><small>GRID / FIELD NETWORK</small></span></a>
+    <div class="workspace-label">WORKSPACE</div>
+    <button class="nav-item active" data-view="overview"><span>◫</span> Operations overview</button>
+    <button class="nav-item" data-view="medical"><span>✚</span> Medical triage <i id="nav-patient-count">04</i></button>
+    <button class="nav-item" data-view="routes"><span>⌁</span> Evacuation routes</button>
+    <button class="nav-item" data-view="incidents"><span>◎</span> Incident reports <i id="nav-incident-count">03</i></button>
+    <button class="nav-item" data-view="conflicts"><span>⇄</span> Sync conflicts <i class="nav-alert" id="nav-conflict-count">01</i></button>
+    <div class="sidebar-bottom">
+      <div class="node-card"><div class="node-head"><span class="pulse"></span> LOCAL NODE ACTIVE</div><p>Data is stored on this device. Network status never blocks local reporting.</p><div class="node-meta"><span>NODE ID</span><b>SG-DELTA-07</b></div></div>
+      <div class="user-row"><div class="avatar">FC</div><div><b>Field Coordinator</b><small>Demo operator · Team Delta</small></div><span class="dots">•••</span></div>
+    </div>
+  </aside>
+  <main class="main">
+    <header class="topbar"><div class="breadcrumb">FIELD NETWORK <span>/</span> <b id="crumb">OVERVIEW</b></div><div class="top-actions"><div class="connection" id="connection"><span class="status-dot"></span><span id="connection-text">LOCAL MODE READY</span></div><button class="icon-btn" id="simulate-offline" title="Toggle simulated connectivity">⇄</button><button class="small-btn" id="sync-queue">Sync queue ↻</button><button class="primary-btn" id="open-report">＋ New report</button></div></header>
+    <div class="content">
+      <section class="hero-row"><div><div class="eyebrow"><span class="live-dot"></span> EMERGENCY RESPONSE SYSTEM <span class="slash">/</span> DEMO ENVIRONMENT</div><h1>Awareness, even<br><em>when networks fail.</em></h1><p class="hero-copy">A shared operational picture built for low-connectivity field conditions. Every report carries its own context, confidence and age.</p></div><div class="hero-stamp"><div class="stamp-icon">⌁</div><span>OFFLINE-FIRST<br>FIELD INTELLIGENCE</span><small>BUILD 0.9.4 · SIMULATED DATA</small></div></section>
+      <div class="notice" id="offline-notice"><span class="notice-icon">⌁</span><div><b>Local-first mode is ready</b><p>Reports and changes are saved on this device. Pending updates will wait here until you choose to simulate a sync.</p></div><button id="notice-close" aria-label="Dismiss notice">×</button></div>
+      <section class="metric-grid">
+        <article class="metric"><div class="metric-top"><span>OPEN INCIDENTS</span><span class="metric-icon purple">◎</span></div><div class="metric-number" id="metric-incidents">03</div><div class="metric-foot"><span class="tiny-bar"></span> Across 3 response zones</div></article>
+        <article class="metric"><div class="metric-top"><span>MEDICAL QUEUE</span><span class="metric-icon red">✚</span></div><div class="metric-number" id="metric-medical">04</div><div class="metric-foot"><span class="dot-red"></span> <span id="urgent-count">2 urgent cases</span></div></article>
+        <article class="metric"><div class="metric-top"><span>ROUTES AT RISK</span><span class="metric-icon amber">⌁</span></div><div class="metric-number" id="metric-routes">02</div><div class="metric-foot"><span class="dot-amber"></span> 1 confirmed blockage · 1 unverified</div></article>
+        <article class="metric"><div class="metric-top"><span>QUEUED UPDATES</span><span class="metric-icon green">⇅</span></div><div class="metric-number" id="metric-queued">02</div><div class="metric-foot"><span class="dot-green"></span> <span id="sync-foot">Waiting for connection</span></div></article>
+      </section>
+      <section class="dashboard-grid">
+        <article class="panel map-panel" id="map-section">
+          <div class="panel-heading"><div><div class="eyebrow">SITUATIONAL AWARENESS</div><h2>Field map <span class="subtle">/ Sector Delta</span></h2></div><div class="map-tools"><span class="map-chip"><span class="pulse"></span> SIMULATED</span><button class="small-btn" id="show-routes">View routes ↗</button></div></div>
+          <div class="map-wrap">
+            <div class="map-grid"></div>
+            <svg class="field-map" viewBox="0 0 760 370" role="img" aria-label="Fictional field map with roads, hazards, medical points and evacuation routes">
+              <defs><pattern id="dots" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1" fill="#49405f" opacity=".7"/></pattern></defs>
+              <rect width="760" height="370" fill="url(#dots)"/>
+              <path class="district" d="M20 25 L220 12 275 95 210 155 40 135Z"/><path class="district" d="M470 18 L730 34 715 150 580 170 510 105Z"/><path class="district" d="M50 230 L230 195 310 300 240 350 30 330Z"/>
+              <g class="roads"><path d="M-10 180 C130 160 160 220 290 180 S520 160 780 220"/><path d="M110 -10 C150 80 240 110 340 170 S480 280 500 390"/><path d="M330 -10 C320 80 390 120 450 180 S590 250 700 380"/><path d="M-10 90 C180 130 240 55 390 80 S600 80 770 45"/><path d="M-10 300 C150 260 240 330 380 300 S600 300 770 320"/></g>
+              <g class="route route-safe"><path d="M90 185 C170 160 210 190 285 180 S410 190 495 235 S590 250 650 285"/></g>
+              <g class="route route-risk"><path d="M285 180 C330 155 365 150 400 125 S470 100 530 110"/></g>
+              <g class="blocked"><path d="M377 137 l16 16 m0 -16 l-16 16"/></g>
+              <g class="map-label"><text x="55" y="55">NORTH RIDGE</text><text x="565" y="54">EAST SECTOR</text><text x="60" y="280">WEST CAMP</text><text x="520" y="345">SOUTH CORRIDOR</text></g>
+              <g class="map-point"><circle cx="90" cy="185" r="13" class="point-purple"/><text x="90" y="189">A</text><text x="65" y="210" class="point-label">FIELD BASE</text></g>
+              <g class="map-point"><circle cx="285" cy="180" r="13" class="point-red"/><text x="285" y="184">!</text><text x="250" y="208" class="point-label">ROAD BLOCK</text></g>
+              <g class="map-point"><circle cx="495" cy="235" r="13" class="point-green"/><text x="495" y="239">+</text><text x="465" y="260" class="point-label">CLINIC 02</text></g>
+              <g class="map-point"><circle cx="650" cy="285" r="13" class="point-purple"/><text x="650" y="289">B</text><text x="620" y="310" class="point-label">SAFE ZONE</text></g>
+              <g class="map-point uncertain"><circle cx="530" cy="110" r="13"/><text x="530" y="114">?</text><text x="500" y="91" class="point-label">UNVERIFIED</text></g>
+              <g class="map-point"><circle cx="400" cy="125" r="7" class="point-amber"/><text x="415" y="119" class="point-label">REPORT 014</text></g>
+            </svg>
+            <div class="map-legend"><span><i class="legend-line safe"></i> Recommended</span><span><i class="legend-line risk"></i> Hazard reported</span><span><i class="legend-dot uncertain"></i> Unverified</span><span><i class="legend-dot green"></i> Medical point</span></div>
+            <div class="map-scale">FICTIONAL MAP · NOT FOR REAL-WORLD NAVIGATION</div>
+          </div>
+          <div class="map-footer"><div><span class="foot-label">LAST MAP UPDATE</span><b id="map-updated">2 min ago</b></div><div><span class="foot-label">REPORTS ON MAP</span><b id="map-reports">06 <small>records</small></b></div><button class="text-btn" id="refresh-map">↻ Recheck report age</button></div>
+        </article>
+        <article class="panel trust-panel"><div class="panel-heading"><div><div class="eyebrow">DATA QUALITY LAYER</div><h2>Trust overview</h2></div><span class="shield">◇</span></div><p class="panel-intro">Reports are evidence, not unquestioned truth. Review age and source before acting.</p>
+          <div class="trust-score"><div class="score-ring"><div><b>78</b><small>/ 100</small></div></div><div><b>Operational confidence</b><p>Based on source, freshness and cross-check status.</p></div></div>
+          <div class="quality-list"><div class="quality-row"><span class="quality-key"><i class="qdot good"></i> Recent & corroborated</span><b>04</b></div><div class="quality-row"><span class="quality-key"><i class="qdot warn"></i> Needs verification</span><b id="needs-verify">02</b></div><div class="quality-row"><span class="quality-key"><i class="qdot stale"></i> Potentially outdated</span><b id="stale-count">01</b></div></div>
+          <div class="trust-note"><span>ⓘ</span><p><b>Age-aware by design</b><br>Old reports are labelled as stale. Confidence is a review aid, not a guarantee of accuracy.</p></div>
+          <button class="outline-btn full" data-view="incidents">Review all reports <span>→</span></button>
+        </article>
+      </section>
+      <section class="lower-grid">
+        <article class="panel medical-panel" id="medical-section"><div class="panel-heading"><div><div class="eyebrow">CLINICAL COORDINATION</div><h2>Medical triage <span class="count-pill" id="medical-pill">04 ACTIVE</span></h2></div><button class="text-btn" data-view="medical">Open queue →</button></div><div class="table-wrap"><table><thead><tr><th>CASE / SOURCE</th><th>SIMULATED VITALS</th><th>URGENCY</th><th>UPDATED</th><th></th></tr></thead><tbody id="patient-table"></tbody></table></div><div class="panel-bottom"><span>DEMO PATIENTS ONLY · NOT CLINICAL ADVICE</span><button class="small-btn" id="change-vitals">↻ Simulate vital change</button></div></article>
+        <article class="panel reports-panel"><div class="panel-heading"><div><div class="eyebrow">FIELD INTELLIGENCE</div><h2>Recent reports</h2></div><button class="text-btn" data-view="incidents">All reports →</button></div><div class="report-list" id="recent-reports"></div><div class="panel-bottom"><span>LOCAL RECORDS</span><button class="small-btn" id="open-report-2">＋ Add report</button></div></article>
+      </section>
+      <footer><span>SAHAYAK GRID <b>·</b> PROTOTYPE INTERFACE</span><span>FICTIONAL SCENARIO <b>·</b> NO REAL PATIENT OR LOCATION DATA</span></footer>
+    </div>
+  </main>
+</div>
+<div class="modal-backdrop" id="report-modal" hidden><form class="modal" id="report-form"><div class="modal-head"><div><div class="eyebrow">LOCAL INCIDENT LOG</div><h2>Submit a field report</h2></div><button type="button" class="icon-btn" id="close-modal">×</button></div><p class="modal-copy">This report will be saved locally, tagged with its source and queued for later synchronisation.</p>
+<label>Report title<input name="title" required maxlength="90" placeholder="e.g. Road obstruction near checkpoint"></label>
+<div class="form-row"><label>Report type<select name="type"><option>Hazard</option><option>Medical</option><option>Evacuation</option><option>Logistics</option></select></label><label>Source / team<input name="source" required maxlength="50" value="Team Delta"></label></div>
+<div class="form-row"><label>Confidence<select name="confidence"><option value="High">High — directly observed</option><option value="Medium" selected>Medium — partially verified</option><option value="Low">Low — unconfirmed</option></select></label><label>Location label<input name="location" maxlength="50" placeholder="e.g. Sector Delta / Road 4"></label></div>
+<label>Details<textarea name="details" rows="3" maxlength="500" placeholder="What was observed? Include uncertainty."></textarea></label>
+<div class="modal-actions"><span>◉ Local-first · Demo data</span><button class="primary-btn" type="submit">Save report ↗</button></div></form></div>
+<div class="toast" id="toast" role="status"></div>
+<script src="app.js"></script>
+</body></html>

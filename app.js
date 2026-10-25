@@ -1,0 +1,52 @@
+const $ = (s, root=document) => root.querySelector(s);
+const $$ = (s, root=document) => [...root.querySelectorAll(s)];
+const KEY = 'sahayak-grid-v1';
+const seedPatients = [
+ {id:'MED-021',name:'Case 021',source:'Team Delta',vitals:'HR 112 · SpO₂ 93%',urgency:'CRITICAL',updated:'1 min ago',score:4},
+ {id:'MED-018',name:'Case 018',source:'Mobile Unit 2',vitals:'HR 104 · SpO₂ 95%',urgency:'HIGH',updated:'3 min ago',score:3},
+ {id:'MED-025',name:'Case 025',source:'Team Echo',vitals:'HR 88 · SpO₂ 98%',urgency:'MODERATE',updated:'5 min ago',score:2},
+ {id:'MED-016',name:'Case 016',source:'Clinic 02',vitals:'HR 92 · SpO₂ 97%',urgency:'MODERATE',updated:'8 min ago',score:2}
+];
+const seedReports = [
+ {id:'RPT-014',title:'Road obstruction reported',type:'Hazard',source:'Team Echo',confidence:'Medium',location:'East Sector / Route 3',details:'A blockage was reported by a field team. Independent confirmation is still pending.',age:4,updatedAt:Date.now()-4*60000},
+ {id:'RPT-013',title:'Clinic 02 capacity available',type:'Medical',source:'Mobile Unit 2',confidence:'High',location:'South Corridor',details:'Fictional receiving facility marked as available in the demo scenario.',age:2,updatedAt:Date.now()-2*60000},
+ {id:'RPT-011',title:'Bridge access condition',type:'Hazard',source:'Team Delta',confidence:'Low',location:'North Ridge / Crossing 1',details:'Older report. Current route condition has not been rechecked.',age:47,updatedAt:Date.now()-47*60000}
+];
+let state = loadState();
+let offline = !navigator.onLine;
+let activeView = 'overview';
+let toastTimer;
+function loadState(){try{const saved=JSON.parse(localStorage.getItem(KEY));if(saved)return {...saved,patients:saved.patients||seedPatients,reports:saved.reports||seedReports,queue:saved.queue||[],conflicts:saved.conflicts||[]}}catch(e){}return {patients:seedPatients,reports:seedReports,queue:[{id:'Q-001',kind:'Incident report',source:'Team Echo',time:'Queued locally'},{id:'Q-002',kind:'Route status update',source:'Team Delta',time:'Queued locally'}],conflicts:[{id:'CF-004',title:'Route 3 status differs',detail:'Team Echo marked blocked; Team Delta marked passable.',left:'Blocked · Team Echo',right:'Passable · Team Delta',time:'Just now'}]}}
+function persist(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){showToast('Storage unavailable. Keep this demo tab open to retain changes.')}}
+function pad(n){return String(n).padStart(2,'0')}
+function ageText(min){if(min<1)return 'Just now';if(min<60)return `${min} min ago`;const h=Math.floor(min/60);return `${h} hr ago`}
+function isStale(r){return (Date.now()-(r.updatedAt||Date.now()))>30*60000}
+function esc(s=''){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function showToast(message){const t=$('#toast');t.textContent=message;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),3100)}
+function renderPatients(){const sorted=[...state.patients].sort((a,b)=>b.score-a.score);$('#patient-table').innerHTML=sorted.map(p=>`<tr><td><div class="case-name"><span class="case-avatar">✚</span><div><b>${esc(p.name)}</b><small>${esc(p.id)} · ${esc(p.source)}</small></div></div></td><td><span class="vitals">${esc(p.vitals)}</span></td><td><span class="urgency ${p.urgency.toLowerCase()}">${esc(p.urgency)}</span></td><td><span class="updated">${esc(p.updated)}</span></td><td><button class="row-action" title="Change simulated urgency" data-patient="${esc(p.id)}">↗</button></td></tr>`).join('');$('#patient-pill').textContent=`${pad(state.patients.length)} ACTIVE`;$('#nav-patient-count').textContent=pad(state.patients.length);$('#metric-medical').textContent=pad(state.patients.length);$('#urgent-count').textContent=`${state.patients.filter(p=>p.score>=3).length} urgent cases`}
+function renderReports(){const reports=[...state.reports].sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));$('#recent-reports').innerHTML=reports.slice(0,4).map(r=>`<div class="report-item"><div class="report-icon ${r.type.toLowerCase()==='hazard'?'hazard':r.type.toLowerCase()==='medical'?'medical':''}">${r.type==='Medical'?'✚':r.type==='Hazard'?'⚠':'⌁'}</div><div class="report-body"><b>${esc(r.title)}</b><div class="report-meta"><span>${esc(r.id)}</span><span>·</span><span>${esc(r.source)}</span><span>·</span><span class="confidence ${r.confidence.toLowerCase()}">${esc(r.confidence)} confidence</span>${isStale(r)?'<span class="stale-tag">POTENTIALLY STALE</span>':''}</div><p class="report-details">${esc(r.location||'Location not specified')} — ${esc(r.details||'No additional details.')}</p></div><span class="report-age">${ageText(Math.floor((Date.now()-(r.updatedAt||Date.now()))/60000))}</span></div>`).join('');$('#metric-incidents').textContent=pad(state.reports.length);$('#nav-incident-count').textContent=pad(state.reports.length);$('#map-reports').innerHTML=`${pad(state.reports.length+3)} <small>records</small>`;$('#needs-verify').textContent=pad(state.reports.filter(r=>r.confidence!=='High').length);$('#stale-count').textContent=pad(state.reports.filter(isStale).length)}
+function renderQueue(){ $('#metric-queued').textContent=pad(state.queue.length);$('#sync-foot').textContent=offline?'Waiting for connection':`${state.queue.length} ready to sync`;$('#nav-conflict-count').textContent=pad(state.conflicts.length); }
+function renderConnection(){const el=$('#connection');el.classList.toggle('offline',offline);$('#connection-text').textContent=offline?'OFFLINE · LOCAL MODE':'ONLINE · LOCAL MODE';$('#offline-notice').classList.toggle('view-hidden',!offline);if(!offline)$('#offline-notice').classList.add('view-hidden');else $('#offline-notice').classList.remove('view-hidden')}
+function render(){renderPatients();renderReports();renderQueue();renderConnection();persist()}
+function setOffline(value){offline=value;renderConnection();renderQueue();showToast(offline?'Offline mode simulated. Local reporting remains available.':'Connection restored in demo. Review queued updates before syncing.')}
+function nav(view){activeView=view;$('#crumb').textContent=view.toUpperCase();$$('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===view));if(view==='medical')$('#medical-section').scrollIntoView({behavior:'smooth',block:'start'});else if(view==='routes')$('#map-section').scrollIntoView({behavior:'smooth',block:'start'});else if(view==='incidents')$('.reports-panel').scrollIntoView({behavior:'smooth',block:'start'});else if(view==='conflicts'){showConflicts()}else window.scrollTo({top:0,behavior:'smooth'})}
+function showConflicts(){if(!state.conflicts.length){showToast('No unresolved conflicts.');return}const c=state.conflicts[0];const choice=confirm(`CONFLICT REVIEW · ${c.title}\n\n${c.detail}\n\nOK = retain both versions for review (recommended)\nCancel = close this message without changes`);if(choice)showToast('Both source versions remain preserved. No record was silently overwritten.')}
+function addReport(data){const id=`RPT-${String(15+state.reports.length-3).padStart(3,'0')}`;const r={id,title:data.title,type:data.type,source:data.source,confidence:data.confidence,location:data.location||'Location not specified',details:data.details||'No details provided.',age:0,updatedAt:Date.now()};state.reports.unshift(r);state.queue.unshift({id:`Q-${String(Date.now()).slice(-4)}`,kind:'New report',source:data.source,time:'Queued locally'});render();showToast(`${id} saved locally and added to the sync queue.`)}
+function syncQueue(){if(offline){showToast('Still offline. Queued updates remain safely stored on this device.');return}if(!state.queue.length){showToast('Nothing is waiting to sync.');return}const n=state.queue.length;state.queue=[];renderQueue();persist();showToast(`${n} demo update(s) marked as synced. No external server was contacted.`)}
+$('#simulate-offline').addEventListener('click',()=>setOffline(!offline));
+$('#sync-queue').addEventListener('click',syncQueue);
+window.addEventListener('online',()=>{offline=false;renderConnection();renderQueue()});window.addEventListener('offline',()=>{offline=true;renderConnection();renderQueue()});
+$('#notice-close').addEventListener('click',()=>$('#offline-notice').classList.add('view-hidden'));
+$('#open-report').addEventListener('click',()=>{$('#report-modal').hidden=false;$('#report-form').elements.title.focus()});
+$('#open-report-2').addEventListener('click',()=>$('#open-report').click());
+$('#close-modal').addEventListener('click',()=>$('#report-modal').hidden=true);
+$('#report-modal').addEventListener('click',e=>{if(e.target===$('#report-modal'))$('#report-modal').hidden=true});
+$('#report-form').addEventListener('submit',e=>{e.preventDefault();const d=Object.fromEntries(new FormData(e.currentTarget).entries());addReport(d);e.currentTarget.reset();e.currentTarget.elements.source.value='Team Delta';$('#report-modal').hidden=true});
+$('#change-vitals').addEventListener('click',()=>{const p=state.patients[Math.floor(Math.random()*state.patients.length)];const high=p.score<3;p.score=high?3:2;p.urgency=high?'HIGH':'MODERATE';p.vitals=high?'HR 108 · SpO₂ 94%':'HR 86 · SpO₂ 98%';p.updated='Just now';state.queue.unshift({id:`Q-${Date.now().toString().slice(-4)}`,kind:'Patient status update',source:p.source,time:'Queued locally'});render();showToast(`${p.id} simulated status changed. Triage queue reordered by urgency.`)});
+$('#patient-table').addEventListener('click',e=>{const b=e.target.closest('[data-patient]');if(!b)return;const p=state.patients.find(x=>x.id===b.dataset.patient);if(!p)return;p.score=p.score>=3?2:4;p.urgency=p.score>=4?'CRITICAL':p.score===3?'HIGH':'MODERATE';p.updated='Just now';state.queue.unshift({id:`Q-${Date.now().toString().slice(-4)}`,kind:'Clinician-assigned urgency change',source:p.source,time:'Queued locally'});render();showToast(`${p.id} urgency updated in demo. Queue reordered.`)});
+$('#show-routes').addEventListener('click',()=>nav('routes'));$('#refresh-map').addEventListener('click',()=>{renderReports();$('#map-updated').textContent='Just now';showToast('Report ages recalculated. Old reports remain flagged, not automatically trusted.')});
+$$('[data-view]').forEach(b=>b.addEventListener('click',()=>nav(b.dataset.view)));
+$('#metric-routes').textContent='02';
+if('serviceWorker' in navigator && location.protocol!=='file:'){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}))}
+render();
+if(!navigator.onLine){offline=true;renderConnection()}
